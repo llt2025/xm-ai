@@ -84,10 +84,9 @@ async function generateSignature(params, secretKey, config) {
   }, {});
 
   // 2. 构建签名字符串
-  const signStr = `GET${config.endpoint}/?` + 
-    Object.entries(sortedParams)
-      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-      .join('&');
+  const signStr = `GET${config.endpoint}/?` + Object.entries(sortedParams)
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+    .join('&');
 
   console.log('签名字符串:', signStr);
 
