@@ -63,12 +63,23 @@ export default async function handler(req, res) {
     });
 
     console.log('响应状态:', response.status);
-    const data = await response.json();
+    const text = await response.text();
+    console.log('响应文本:', text);
+    
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      console.error("腾讯云返回非JSON:", text);
+      throw new Error(`腾讯云API错误: ${response.status} ${text.substring(0, 200)}`);
+    }
+    
     console.log('响应数据:', data);
 
     // 处理响应
-    if (data.Response && data.Response.Error) {
-      return res.status(500).json({ error: data.Response.Error.Message });
+    if (!response.ok || (data.Response && data.Response.Error)) {
+      const errorMessage = data.Response?.Error?.Message || `HTTP错误: ${response.status}`;
+      return res.status(500).json({ error: errorMessage });
     }
 
     // 返回腾讯云的响应结果
