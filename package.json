@@ -2,6 +2,7 @@
   "name": "xm-ai",
   "version": "1.0.0",
   "description": "鞋魔AI - 基于通义万相的鞋款设计工具",
+  "type": "module",
   "main": "index.html",
   "scripts": {
     "dev": "vercel dev",
