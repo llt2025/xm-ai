@@ -22,8 +22,8 @@ export default async function handler(req, res) {
   const config = {
     endpoint: 'ai3d.tencentcloudapi.com',
     region: 'ap-guangzhou',
-    action: 'SubmitHunyuanT3DProJob', // 专业版
-    // action: 'SubmitHunyuanT3DRapidJob', // 快速版
+    action: 'SubmitHunyuanTo3DProJob', // 专业版
+    // action: 'SubmitHunyuanTo3DRapidJob', // 快速版
     version: '2025-05-13',
     service: 'ai3d'
   };
