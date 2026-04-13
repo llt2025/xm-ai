@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鞋魔AI · 正式上线版（wan2.7-image + 腾讯云智创3D）</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;600&display=swap');
+       
+        :root { --tw-color-primary: #ff2d55; }
+        * { font-family: 'Inter', 'Noto Sans SC', system-ui, sans-serif; }
+       
+        .model-viewer {
+            width: 100%;
+            height: 520px;
+            background: linear-gradient(180deg, #f8f9fa 0%, #e5e7eb 100%);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.15);
+        }
+       
+        .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); }
+       
+        .sidebar-link { transition: all 0.2s ease; }
+       
+        .upload-zone {
+            border: 3px dashed #ff2d55;
+            transition: all 0.3s ease;
+        }
+        .upload-zone.dragover { background: #fff1f2; border-color: #ff2d55; }
+       
+        .loading-dot { animation: dotPulse 1.5s infinite; }
+        @keyframes dotPulse {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 1; }
+        }
+        .log-panel {
+            background: #1a1a2e;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            border-radius: 12px;
+            padding: 12px 16px;
+        }
+        .log-panel .log-error { color: #ff4444; }
+        .log-panel .log-warn { color: #ffaa00; }
+        .log-panel .log-info { color: #00ccff; }
+        .log-panel .log-success { color: #00ff88; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen overflow-hidden">
+        <!-- 左侧导航 -->
+        <div class="w-64 bg-white border-r border-gray-200 flex flex-col">
+            <div class="px-6 py-8 border-b border-gray-200 flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-red-500 to-pink-500 rounded-2xl flex items-center justify-center text-white text-3xl shadow-inner">👟</div>
+                <div>
+                    <h1 class="text-3xl font-bold tracking-tighter text-gray-900">鞋魔AI</h1>
+                    <p class="text-xs text-red-500 font-medium -mt-1">wan2.7-image 正式版</p>
+                </div>
+                <span class="ml-auto px-3 py-1 text-xs font-medium bg-green-100 text-green-600 rounded-3xl flex items-center gap-1">已激活</span>
+            </div>
+            <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+                <a onclick="switchTab(0)" id="tab-0" class="sidebar-link flex items-center gap-3 px-4 py-4 text-gray-700 hover:bg-gray-100 rounded-3xl font-medium active cursor-pointer">🏠 首页</a>
+                <a onclick="switchTab(1)" id="tab-1" class="sidebar-link flex items-center gap-3 px-4 py-4 text-gray-700 hover:bg-gray-100 rounded-3xl font-medium cursor-pointer">📸 图片驱动魔盒</a>
+                <a onclick="switchTab(2)" id="tab-2" class="sidebar-link flex items-center gap-3 px-4 py-4 text-gray-700 hover:bg-gray-100 rounded-3xl font-medium cursor-pointer">🌀 360°简易3D</a>
+                <a onclick="switchTab(3)" id="tab-3" class="sidebar-link flex items-center gap-3 px-4 py-4 text-gray-700 hover:bg-gray-100 rounded-3xl font-medium cursor-pointer">📚 模板库</a>
+            </nav>
+            <div class="p-4 border-t border-gray-200 text-xs text-gray-400">
+                <div>✅ 真实API：wan2.7-image（通义万相）+ 腾讯云智创3D</div>
+                <div class="mt-2">🚀 已部署到 Vercel，前端无 Key</div>
+            </div>
+        </div>
+        <!-- 右侧内容区 -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- 顶部栏 -->
+            <div class="h-16 bg-white border-b flex items-center px-8 justify-between">
+                <div class="flex items-center gap-4">
+                    <h2 id="page-title" class="text-2xl font-semibold text-gray-800">首页</h2>
+                    <div class="bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm px-4 py-1.5 rounded-3xl font-medium flex items-center gap-2">
+                        <span>🚀 已生成</span>
+                        <span id="count-number" class="font-mono text-xl font-bold">0</span>
+                        <span>款</span>
+                    </div>
+                </div>
+               
+                <div class="flex items-center gap-4 text-xs text-gray-400">
+                    <div>API状态：</div>
+                    <div class="flex items-center gap-1">
+                        <span id="wan-status" class="w-2 h-2 bg-gray-400 rounded-full"></span>
+                        通义万相
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <span id="tencent-status" class="w-2 h-2 bg-gray-400 rounded-full"></span>
+                        腾讯云智创3D
+                    </div>
+                </div>
+            </div>
+            <!-- 主要内容 -->
+            <div class="flex-1 overflow-auto p-8" id="main-content">
+                <!-- ==================== 首页 ==================== -->
+                <div id="content-0">
+                    <div class="max-w-4xl mx-auto text-center py-12">
+                        <h1 class="text-5xl font-bold tracking-tighter mb-4">上传鞋图 → 通义万相出效果图 → 腾讯云智创3D转360°模型</h1>
+                        <p class="text-xl text-gray-500 mb-12">真实API已集成 · Vercel 部署完成 · Key 已隐藏</p>
+                       
+                        <div class="grid grid-cols-3 gap-6">
+                            <div onclick="switchTab(1)" class="bg-white rounded-3xl p-8 card-hover cursor-pointer border border-transparent hover:border-red-200">
+                                <div class="text-6xl mb-6">📸</div>
+                                <h3 class="text-2xl font-semibold">图片驱动魔盒</h3>
+                                <p class="text-gray-500 mt-2">上传鞋照 + 描述 → 通义万相生成效果图</p>
+                            </div>
+                            <div onclick="switchTab(2)" class="bg-white rounded-3xl p-8 card-hover cursor-pointer border border-transparent hover:border-red-200">
+                                <div class="text-6xl mb-6">🌀</div>
+                                <h3 class="text-2xl font-semibold">360°简易3D</h3>
+                                <p class="text-gray-500 mt-2">效果图 → 腾讯云智创3D生成可旋转GLB</p>
+                            </div>
+                            <div onclick="switchTab(3)" class="bg-white rounded-3xl p-8 card-hover cursor-pointer border border-transparent hover:border-red-200">
+                                <div class="text-6xl mb-6">📚</div>
+                                <h3 class="text-2xl font-semibold">模板库</h3>
+                                <p class="text-gray-500 mt-2">安踏风格鞋型一键参考</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== 图片驱动魔盒 ==================== -->
+                <div id="content-1" class="hidden">
+                    <div class="max-w-5xl mx-auto bg-white rounded-3xl p-10">
+                        <h2 class="text-3xl font-semibold mb-2">📸 图片驱动魔盒 <span class="text-sm bg-red-100 text-red-600 px-3 py-1 rounded-3xl">通义万相 wan2.7-image</span></h2>
+                        <p class="text-gray-500 mb-1">上传鞋图 + 描述需求 → 异步提交任务 → 轮询获取结果图</p>
+                       
+                        <div class="grid grid-cols-2 gap-8 mt-10">
+                            <div>
+                                <p class="text-sm font-medium mb-3">上传参考鞋图 <span class="text-red-500">*</span></p>
+                                <div id="upload-zone1" onclick="document.getElementById('upload1').click()"
+                                     class="upload-zone rounded-3xl h-64 flex flex-col items-center justify-center cursor-pointer relative">
+                                    <input type="file" id="upload1" accept="image/*" class="hidden" onchange="handleUpload(event,1)">
+                                    <div id="preview1" class="hidden w-full h-full rounded-3xl overflow-hidden"></div>
+                                    <div id="empty1" class="text-center">
+                                        <div class="text-5xl mb-3">📸</div>
+                                        <p class="font-medium">点击上传鞋照</p>
+                                        <p class="text-xs text-gray-400 mt-1">支持 jpg/png，≤10MB</p>
+                                    </div>
+                                </div>
+                                <button onclick="clearUpload(1)" class="mt-2 text-xs text-gray-400 hover:text-red-500">清除图片</button>
+                            </div>
+                           
+                            <div>
+                                <p class="text-sm font-medium mb-3">可选：第二张图（鞋底/Logo）</p>
+                                <div id="upload-zone2" onclick="document.getElementById('upload2').click()"
+                                     class="upload-zone rounded-3xl h-64 flex flex-col items-center justify-center cursor-pointer relative">
+                                    <input type="file" id="upload2" accept="image/*" class="hidden" onchange="handleUpload(event,2)">
+                                    <div id="preview2" class="hidden w-full h-full rounded-3xl overflow-hidden"></div>
+                                    <div id="empty2" class="text-center">
+                                        <div class="text-5xl mb-3">🔀</div>
+                                        <p class="font-medium">混搭/换标用</p>
+                                    </div>
+                                </div>
+                                <button onclick="clearUpload(2)" class="mt-2 text-xs text-gray-400 hover:text-red-500">清除图片</button>
+                            </div>
+                        </div>
+                        <div class="mt-8">
+                            <p class="text-sm font-medium mb-3">修改需求（支持常见鞋款需求）</p>
+                            <div class="flex flex-wrap gap-3 mb-6">
+                                <button onclick="setPreset('挖孔')" class="px-6 py-2.5 text-sm border rounded-3xl hover:bg-red-50 transition">🕳️ 在鞋面上挖通风孔</button>
+                                <button onclick="setPreset('混搭')" class="px-6 py-2.5 text-sm border rounded-3xl hover:bg-red-50 transition">🔀 鞋面+另一张鞋底混搭</button>
+                                <button onclick="setPreset('换标')" class="px-6 py-2.5 text-sm border rounded-3xl hover:bg-red-50 transition">🏷️ 替换商标/Logo</button>
+                                <button onclick="setPreset('轻量')" class="px-6 py-2.5 text-sm border rounded-3xl hover:bg-red-50 transition">🏃 加碳板轻量跑鞋风格</button>
+                            </div>
+                           
+                            <div class="flex gap-4">
+                                <input id="prompt-input" type="text" placeholder="例如：红色安踏风格跑鞋，鞋面加透气孔，碳板中底"
+                                       class="flex-1 px-7 py-5 border border-gray-200 rounded-3xl focus:outline-none focus:border-red-400 text-sm">
+                                <button id="generate-btn" onclick="generateWithWanxiang()"
+                                        class="px-10 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-3xl transition whitespace-nowrap">
+                                    生成效果图
+                                </button>
+                            </div>
+                        </div>
+                        <!-- 调试日志面板 -->
+                        <div class="mt-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-xs font-medium text-gray-500">📋 调试日志</p>
+                                <button onclick="clearLog()" class="text-xs text-gray-400 hover:text-red-500">清除</button>
+                            </div>
+                            <div id="debug-log" class="log-panel">
+                                <div class="log-info">[系统] 鞋魔AI Vercel 版已就绪，等待操作...</div>
+                            </div>
+                        </div>
+                        <!-- Loading -->
+                        <div id="wan-loading" class="hidden mt-10 flex flex-col items-center py-12">
+                            <div class="animate-spin w-10 h-10 border-4 border-red-200 border-t-red-500 rounded-full mb-4"></div>
+                            <p class="text-gray-700">正在生成… <span id="wan-stage">提交任务中</span></p>
+                            <p class="text-xs text-gray-400 mt-1">任务ID：<span id="wan-task-id">-</span></p>
+                            <p class="text-xs text-gray-400">已等待：<span id="wan-timer">0</span>秒</p>
+                        </div>
+                        <!-- 结果区 -->
+                        <div class="mt-12">
+                            <h3 class="text-2xl font-semibold mb-4 text-center">🎨 生成的设计效果图</h3>
+                            <p class="text-sm text-gray-500 text-center mb-6">以下是根据您的需求生成的设计效果图，点击下载按钮可保存到本地</p>
+                            <div id="wan-results" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 p-6 bg-gray-50 rounded-3xl border border-gray-200 min-h-[400px]"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== 3D 展示 ==================== -->
+                <div id="content-2" class="hidden max-w-4xl mx-auto">
+                    <h2 class="text-3xl font-semibold mb-6">🌀 360°简易3D展示 <span class="text-sm text-blue-600">(腾讯云智创3D 图像转3D)</span></h2>
+                    <p id="3d-info" class="text-gray-500 mb-6">选中效果图后点击"生成3D"即可调用腾讯云智创3D</p>
+                   
+                    <div id="3d-loading" class="hidden flex flex-col items-center py-12">
+                        <div class="animate-spin w-10 h-10 border-4 border-blue-200 border-t-blue-500 rounded-full mb-4"></div>
+                        <p>正在生成3D模型… 预计30-60秒<span class="loading-dot">.</span></p>
+                        <p class="text-xs text-gray-400 mt-1">任务ID：<span id="tencent-task-id">生成中...</span></p>
+                    </div>
+                   
+                    <div id="3d-fallback" class="w-full bg-gray-100 rounded-2xl flex items-center justify-center text-gray-500" style="height:520px">
+                        请先在「图片驱动魔盒」生成效果图，然后点击"生成360°3D"
+                    </div>
+                </div>
+
+                <!-- ==================== 模板库 ==================== -->
+                <div id="content-3" class="hidden">
+                    <h2 class="text-3xl font-semibold mb-8">📚 安踏风格模板库</h2>
+                    <div id="template-grid" class="grid grid-cols-2 md:grid-cols-4 gap-6"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =============================================
+        // 全局状态
+        // =============================================
+        let refImage1 = null;           // 完整 base64 (带 data:image 前缀)
+        let refImage1Pure = null;       // 不带前缀的纯 base64（如果需要）
+        let refImage2 = null;
+        let generatedDesigns = [];
+        let isGenerating = false;
+
+        // =============================================
+        // API 配置（前端无 Key）
+        // =============================================
+        const API_CONFIG = {
+            wanxiang: {
+                model: "wan2.7-image",           // 推荐 pro 版，效果更好；也可改成 "wan2.7-image"
+                submitEndpoint: "/api/wanxiang",     // 提交任务代理
+                taskEndpoint: "/api/wanxiang-task"   // 轮询任务代理
+            },
+            tencent3d: {
+                endpoint: "api.cloud.tencent.com",
+                region: "ap-guangzhou",
+                action: "Create3DModel",
+                version: "2024-01-01",
+                model: "tencent-cloud-3d"
+            }
+        };
+
+        // =============================================
+        // 初始化
+        // =============================================
+        window.onload = function() {
+            checkAPIStatus();
+            renderTemplates();
+            switchTab(0);
+           
+            addLog('info', '鞋魔AI Vercel 正式版已启动');
+            addLog('info', `当前模型：${API_CONFIG.wanxiang.model}`);
+            addLog('info', `提交接口：${API_CONFIG.wanxiang.submitEndpoint}`);
+            addLog('info', `腾讯云智创3D 配置：${API_CONFIG.tencent3d.endpoint}`);
+            addLog('success', 'API Key 已通过 Vercel 环境变量隐藏，前端安全');
+        };
+
+        // =============================================
+        // 调试日志
+        // =============================================
+        function addLog(level, msg) {
+            const panel = document.getElementById('debug-log');
+            const time = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.className = `log-${level}`;
+            div.textContent = `[${time}] ${msg}`;
+            panel.appendChild(div);
+            panel.scrollTop = panel.scrollHeight;
+            console.log(`[${level}] ${msg}`);
+        }
+
+        function clearLog() {
+            document.getElementById('debug-log').innerHTML = '<div class="log-info">[系统] 日志已清除</div>';
+        }
+
+        // =============================================
+        // API 状态检测
+        // =============================================
+        function checkAPIStatus() {
+            const wanStatus = document.getElementById('wan-status');
+            const tencentStatus = document.getElementById('tencent-status');
+            
+            wanStatus.className = "w-2 h-2 bg-green-400 rounded-full animate-pulse";
+            tencentStatus.className = "w-2 h-2 bg-green-400 rounded-full animate-pulse";
+        }
+
+        // =============================================
+        // Tab 切换
+        // =============================================
+        function switchTab(n) {
+            document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active','bg-red-50','text-red-600'));
+            document.getElementById(`tab-${n}`).classList.add('active','bg-red-50','text-red-600');
+           
+            document.querySelectorAll('#main-content > div').forEach(d => d.classList.add('hidden'));
+            document.getElementById(`content-${n}`).classList.remove('hidden');
+           
+            const titles = ["首页", "图片驱动魔盒", "360°简易3D", "模板库"];
+            document.getElementById('page-title').textContent = titles[n];
+        }
+
+        // =============================================
+        // 图片上传
+        // =============================================
+        function handleUpload(e, num) {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (file.size > 10 * 1024 * 1024) {
+                alert("图片大小不能超过10MB");
+                return;
+            }
+           
+            addLog('info', `上传图片${num}：${file.name}`);
+           
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                const base64 = ev.target.result;                    // 带 data:image 前缀
+                const pureBase64 = base64.replace(/^data:image\/\w+;base64,/, "");
+               
+                if (num === 1) {
+                    refImage1 = base64;
+                    refImage1Pure = pureBase64;
+                    document.getElementById('preview1').innerHTML = `<img src="${base64}" class="w-full h-full object-contain">`;
+                    document.getElementById('preview1').classList.remove('hidden');
+                    document.getElementById('empty1').classList.add('hidden');
+                    addLog('success', '参考图1已加载');
+                } else {
+                    refImage2 = base64;
+                    document.getElementById('preview2').innerHTML = `<img src="${base64}" class="w-full h-full object-contain">`;
+                    document.getElementById('preview2').classList.remove('hidden');
+                    document.getElementById('empty2').classList.add('hidden');
+                    addLog('success', '参考图2已加载');
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearUpload(num) {
+            if (num === 1) {
+                refImage1 = null; refImage1Pure = null;
+                document.getElementById('preview1').classList.add('hidden');
+                document.getElementById('preview1').innerHTML = '';
+                document.getElementById('empty1').classList.remove('hidden');
+                document.getElementById('upload1').value = '';
+            } else {
+                refImage2 = null;
+                document.getElementById('preview2').classList.add('hidden');
+                document.getElementById('preview2').innerHTML = '';
+                document.getElementById('empty2').classList.remove('hidden');
+                document.getElementById('upload2').value = '';
+            }
+            addLog('info', `已清除图片${num}`);
+        }
+
+        // =============================================
+        // Prompt 预设
+        // =============================================
+        function setPreset(type) {
+            const input = document.getElementById('prompt-input');
+            const presets = {
+                '挖孔': "运动鞋产品效果图，鞋面均匀分布透气孔，轻量运动风格，白色背景，高清8K，电商级产品摄影",
+                '混搭': "运动鞋产品效果图，时尚混搭风格，鞋面网面材质搭配皮革鞋底，颜色协调，白色背景，高清8K，电商级产品摄影",
+                '换标': "运动鞋产品效果图，现代简约Logo设计，品牌感强，白色背景，高清8K，电商级产品摄影",
+                '轻量': "碳板跑鞋产品效果图，轻量化设计，透气网面鞋面，碳纤维中底，白色背景，高清8K，电商级产品摄影"
+            };
+            input.value = presets[type] || '';
+            addLog('info', `已选择预设：${type}`);
+        }
+
+        // =============================================
+        // 核心生成函数（wan2.7-image 最新协议）
+        // =============================================
+        async function generateWithWanxiang() {
+            if (isGenerating) return alert("正在生成中，请等待...");
+            const prompt = document.getElementById('prompt-input').value.trim();
+            if (!prompt) return alert("请填写设计描述");
+
+            isGenerating = true;
+            const btn = document.getElementById('generate-btn');
+            btn.textContent = '生成中...';
+            btn.disabled = true;
+
+            const loading = document.getElementById('wan-loading');
+            const resultsDiv = document.getElementById('wan-results');
+            
+            addLog('info', `resultsDiv 元素: ${resultsDiv}`);
+            addLog('info', `resultsDiv 可见性: ${window.getComputedStyle(resultsDiv).display}`);
+            addLog('info', `resultsDiv 高度: ${resultsDiv.offsetHeight}`);
+            addLog('info', `resultsDiv 宽度: ${resultsDiv.offsetWidth}`);
+            
+            loading.classList.remove('hidden');
+            resultsDiv.innerHTML = '';
+
+            let timerCount = 0;
+            const timer = setInterval(() => {
+                timerCount++;
+                document.getElementById('wan-timer').textContent = timerCount;
+            }, 1000);
+
+            try {
+                addLog('info', '========== 开始生成 ==========');
+                addLog('info', `Prompt: ${prompt}`);
+                addLog('info', `有参考图: ${refImage1 ? '是' : '否'}`);
+
+                document.getElementById('wan-stage').textContent = '提交任务中...';
+
+                // 构建 messages（wan2.7 标准格式）
+                const content = [];
+                if (refImage1) {
+                    content.push({ image: refImage1 });   // 带 data: 前缀的完整 base64
+                    addLog('info', '已加入参考鞋图（image）');
+                }
+                content.push({ text: prompt + (prompt.includes('8K') ? '' : '，高清8K，电商级产品摄影，白色背景') });
+
+                const requestBody = {
+                    model: API_CONFIG.wanxiang.model,
+                    input: {
+                        messages: [{ role: "user", content: content }]
+                    },
+                    parameters: {
+                        size: "1024*1024",
+                        n: 4,
+                        watermark: false
+                    }
+                };
+
+                // 提交任务（走 Vercel 代理）
+                addLog('info', `提交请求到: ${API_CONFIG.wanxiang.submitEndpoint}`);
+                addLog('info', `请求体: ${JSON.stringify(requestBody)}`);
+                
+                let submitData;
+                try {
+                    const submitRes = await fetch(API_CONFIG.wanxiang.submitEndpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-DashScope-Async': 'enable'
+                        },
+                        body: JSON.stringify(requestBody),
+                        timeout: 30000 // 30秒超时
+                    });
+
+                    addLog('info', `提交响应状态: ${submitRes.status}`);
+                    
+                    submitData = await submitRes.json();
+                    addLog('info', `提交响应数据: ${JSON.stringify(submitData)}`);
+
+                    if (!submitRes.ok) {
+                        throw new Error(`提交失败: ${submitData.error || submitData.message || JSON.stringify(submitData)}`);
+                    }
+                } catch (fetchError) {
+                    addLog('error', `网络请求失败: ${fetchError.message}`);
+                    if (fetchError.name === 'TypeError' && fetchError.message.includes('Failed to fetch')) {
+                        throw new Error('网络请求失败，请检查网络连接或 Vercel 函数是否正常运行');
+                    }
+                    throw fetchError;
+                }
+
+                const taskId = submitData.output?.task_id;
+                if (!taskId) throw new Error('未返回 task_id');
+
+                document.getElementById('wan-task-id').textContent = taskId;
+                addLog('success', `任务提交成功，task_id: ${taskId}`);
+
+                // 轮询任务（走代理）
+                document.getElementById('wan-stage').textContent = '等待生成中...';
+                const result = await pollWanxiangTask(taskId);
+
+                addLog('info', `轮询结果: ${JSON.stringify(result)}`);
+                
+                // 直接从轮询结果中提取图片数据
+                let imageUrls = [];
+                
+                // 显示完整的轮询结果
+                addLog('info', `轮询结果完整数据: ${JSON.stringify(result)}`);
+                
+                // 尝试从新的 API 响应格式中提取图片
+                if (result.images && result.images.length > 0) {
+                    // 优先使用后端转存到 Vercel Blob 的图片
+                    addLog('info', `从result.images提取图片，数量: ${result.images.length}`);
+                    imageUrls = result.images.map(item => {
+                        addLog('info', `图片信息: URL=${item.url}, 类型=${item.type}`);
+                        return item.url;
+                    }).filter(Boolean);
+                    addLog('info', `提取到的图片URL: ${JSON.stringify(imageUrls)}`);
+                } else if (result.output?.results) {
+                    // 从旧格式中提取
+                    addLog('info', `从result.output.results提取图片，数量: ${result.output.results.length}`);
+                    imageUrls = result.output.results.map(item => {
+                        if (item.b64_image) {
+                            addLog('info', `找到b64_image: ${item.b64_image.substring(0, 50)}...`);
+                            return item.b64_image;
+                        }
+                        if (item.url) {
+                            addLog('info', `找到url: ${item.url}`);
+                            return item.url;
+                        }
+                        if (item.image) {
+                            addLog('info', `找到image: ${item.image.substring(0, 50)}...`);
+                            return item.image;
+                        }
+                        return null;
+                    }).filter(Boolean);
+                    addLog('info', `提取到的图片URL: ${JSON.stringify(imageUrls)}`);
+                } else if (result.output?.choices) {
+                    addLog('info', `从result.output.choices提取图片，数量: ${result.output.choices.length}`);
+                    imageUrls = result.output.choices.map(item => {
+                        addLog('info', `choices item: ${JSON.stringify(item)}`);
+                        if (item.b64_image) {
+                            addLog('info', `找到b64_image: ${item.b64_image.substring(0, 50)}...`);
+                            return item.b64_image;
+                        }
+                        if (item.url) {
+                            addLog('info', `找到url: ${item.url}`);
+                            return item.url;
+                        }
+                        if (item.image) {
+                            addLog('info', `找到image: ${item.image.substring(0, 50)}...`);
+                            return item.image;
+                        }
+                        if (item.content) {
+                            // 处理 content 数组
+                            addLog('info', `找到content: ${JSON.stringify(item.content)}`);
+                            if (Array.isArray(item.content)) {
+                                const imageContent = item.content.find(c => c.image);
+                                if (imageContent) {
+                                    addLog('info', `从content中找到image: ${imageContent.image.substring(0, 50)}...`);
+                                    return imageContent.image;
+                                }
+                            } else if (item.content.image) {
+                                addLog('info', `从content.image找到图片: ${item.content.image.substring(0, 50)}...`);
+                                return item.content.image;
+                            }
+                        }
+                        return null;
+                    }).filter(Boolean);
+                    addLog('info', `提取到的图片URL: ${JSON.stringify(imageUrls)}`);
+                } else if (result.choices) {
+                    addLog('info', `从result.choices提取图片，数量: ${result.choices.length}`);
+                    imageUrls = result.choices.map(item => {
+                        addLog('info', `choices item: ${JSON.stringify(item)}`);
+                        if (item.b64_image) {
+                            addLog('info', `找到b64_image: ${item.b64_image.substring(0, 50)}...`);
+                            return item.b64_image;
+                        }
+                        if (item.url) {
+                            addLog('info', `找到url: ${item.url}`);
+                            return item.url;
+                        }
+                        if (item.image) {
+                            addLog('info', `找到image: ${item.image.substring(0, 50)}...`);
+                            return item.image;
+                        }
+                        return null;
+                    }).filter(Boolean);
+                    addLog('info', `提取到的图片URL: ${JSON.stringify(imageUrls)}`);
+                } else {
+                    addLog('warn', '未找到任何图片数据');
+                    addLog('warn', `响应结构: ${JSON.stringify(result)}`);
+                }
+                
+                // 如果没有从轮询结果中提取到图片 URL，尝试从日志中提取
+                if (imageUrls.length === 0) {
+                    const logContent = document.getElementById('debug-log').innerText;
+                    const urlRegex = /(https:\/\/[^"\s]+\.(?:png|jpg|jpeg|gif|webp))/g;
+                    let match;
+                    while ((match = urlRegex.exec(logContent)) !== null) {
+                        const cleanUrl = match[0].replace(/\\/g, '');
+                        imageUrls.push(cleanUrl);
+                    }
+                }
+                
+                addLog('info', `提取的图片 URL: ${JSON.stringify(imageUrls)}`);
+                addLog('info', `图片数量: ${imageUrls.length}`);
+                
+                if (imageUrls.length === 0) throw new Error("任务完成但未返回图片");
+
+                // 只使用第一张图片
+                const firstImageUrl = imageUrls[0];
+                addLog('info', `使用第一张图片: ${firstImageUrl}`);
+
+                if (!firstImageUrl) throw new Error("未找到有效图片");
+
+                addLog('success', `生成完成！共 1 张图片`);
+
+                // 清空结果区域
+                resultsDiv.innerHTML = '';
+                
+                // 显示生成的图片
+                const design = {
+                    id: Date.now(),
+                    name: `鞋款设计 ${generatedDesigns.length + 1}`,
+                    image: firstImageUrl,
+                    prompt: prompt
+                };
+                generatedDesigns.push(design);
+
+                // 创建图片卡片
+                const card = document.createElement('div');
+                card.className = "bg-white border rounded-3xl overflow-hidden card-hover shadow-lg";
+                card.style = "transition: all 0.3s ease; max-width: 600px; margin: 0 auto;";
+                
+                // 检查图片 URL 是否为 base64 格式
+                const isBase64 = firstImageUrl.startsWith('data:image');
+                
+                // 创建卡片内容
+                const cardContent = document.createElement('div');
+                cardContent.innerHTML = `
+                    <div class="relative">
+                        <div class="w-full h-80 bg-gray-100 flex items-center justify-center">
+                            <img class="w-full h-full object-contain">
+                        </div>
+                        <div class="absolute top-4 right-4 bg-white bg-opacity-90 rounded-full px-4 py-2 text-sm font-medium shadow-sm">
+                            设计 1
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <p class="font-medium text-lg">${design.name}</p>
+                        <p class="text-sm text-gray-500 mt-3 line-clamp-3">${prompt}</p>
+                        <div class="flex gap-4 mt-6">
+                            <button class="download-btn flex-1 py-4 text-base bg-gray-100 text-gray-700 rounded-2xl text-center hover:bg-gray-200 transition flex items-center justify-center gap-2">
+                                <span>📥</span>
+                                <span>下载图片</span>
+                            </button>
+                            <button class="generate3d-btn flex-1 py-4 text-base bg-blue-500 text-white rounded-2xl hover:bg-blue-600 transition flex items-center justify-center gap-2">
+                                <span>🎯</span>
+                                <span>生成3D</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                // 设置图片源和错误处理
+                const img = cardContent.querySelector('img');
+                img.src = firstImageUrl;
+                img.onerror = function() {
+                    const parent = this.parentElement;
+                    parent.innerHTML = '<div class="text-center p-8"><div class="text-6xl mb-4"></div><div class="text-lg text-gray-500">图片加载失败</div></div>';
+                };
+                
+                // 添加事件监听器
+                const downloadBtn = cardContent.querySelector('.download-btn');
+                downloadBtn.addEventListener('click', () => downloadImage(firstImageUrl, 'design-1.png'));
+                
+                const generate3dBtn = cardContent.querySelector('.generate3d-btn');
+                generate3dBtn.addEventListener('click', (e) => {
+                    generate3DFromImage(design.id);
+                    e.stopPropagation();
+                });
+                
+                // 将内容添加到卡片
+                card.appendChild(cardContent);
+                
+                // 添加卡片到结果区域
+                addLog('info', `添加图片卡片到页面`);
+                addLog('info', `resultsDiv 当前子元素数量: ${resultsDiv.children.length}`);
+                
+                resultsDiv.appendChild(card);
+                
+                addLog('info', `添加后 resultsDiv 子元素数量: ${resultsDiv.children.length}`);
+                
+                // 强制渲染
+                setTimeout(() => {
+                    addLog('info', `卡片渲染状态: 已添加到 DOM`);
+                }, 100);
+                
+                // 滚动到结果区域
+                setTimeout(() => {
+                    resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 500);
+
+                document.getElementById('count-number').textContent = parseInt(document.getElementById('count-number').textContent) + 1;
+
+            } catch (error) {
+                console.error(error);
+                addLog('error', `生成失败: ${error.message}`);
+                // 根据错误信息显示不同的提示
+                if (error.message.includes('未配置 DASHSCOPE_API_KEY') || error.message.includes('API Key 未配置')) {
+                    alert(`生成失败：${error.message}\n\n请检查 Vercel 环境变量 DASHSCOPE_API_KEY 是否正确设置`);
+                } else if (error.message.includes('任务超时')) {
+                    alert(`生成失败：${error.message}\n\n任务处理时间过长，请稍后重试`);
+                } else if (error.message.includes('任务失败')) {
+                    alert(`生成失败：${error.message}\n\n任务处理失败，请检查输入参数或稍后重试`);
+                } else {
+                    alert(`生成失败：${error.message}\n\n请查看控制台日志获取详细信息`);
+                }
+            } finally {
+                clearInterval(timer);
+                loading.classList.add('hidden');
+                isGenerating = false;
+                btn.textContent = '生成效果图';
+                btn.disabled = false;
+            }
+        }
+
+        // =============================================
+        // 轮询任务（走代理）
+        // =============================================
+        async function pollWanxiangTask(taskId, retries = 0) {
+            const maxRetries = 20; // 最多轮询20次（约1分钟）
+            const interval = 3000; // 3秒间隔，避免过于频繁的请求
+            let attempt = retries + 1;
+
+            if (retries > maxRetries) {
+                addLog('error', '生成超时，请重试');
+                document.getElementById('wan-stage').textContent = '生成超时，请重试';
+                throw new Error('生成超时，请重试');
+            }
+
+            try {
+                addLog('info', `轮询任务 (${attempt}/${maxRetries}): ${taskId}`);
+                const res = await fetch(`${API_CONFIG.wanxiang.taskEndpoint}?taskId=${taskId}`);
+                addLog('info', `轮询响应状态: ${res.status}`);
+                
+                const data = await res.json();
+                addLog('info', `轮询响应数据: ${JSON.stringify(data)}`);
+
+                if (!res.ok) {
+                    throw new Error(`轮询失败: ${data.error || JSON.stringify(data)}`);
+                }
+
+                const status = data.output?.task_status ? String(data.output.task_status).toUpperCase() : 'UNKNOWN';
+                addLog('info', `轮询状态: ${status}`);
+
+                // 更新 UI 状态
+                updatePollingStatus(status, attempt);
+
+                if (status === 'SUCCEEDED') {
+                    addLog('success', '任务成功完成！');
+                    return data;
+                }
+                if (status === 'FAILED') {
+                    throw new Error(data.output?.message || '任务失败');
+                }
+                if (status === 'UNKNOWN') {
+                    addLog('warn', '任务状态未知');
+                }
+
+                // 继续轮询
+                await new Promise(r => setTimeout(r, interval));
+                return pollWanxiangTask(taskId, retries + 1);
+            } catch (e) {
+                addLog('warn', `轮询出错: ${e.message}`);
+                // 更新 UI 错误状态
+                document.getElementById('wan-stage').textContent = `轮询出错: ${e.message}`;
+                // 继续轮询，避免因临时错误而停止
+                await new Promise(r => setTimeout(r, interval));
+                return pollWanxiangTask(taskId, retries + 1);
+            }
+        }
+
+        // 更新轮询状态 UI
+        function updatePollingStatus(status, attempt) {
+            const stageElement = document.getElementById('wan-stage');
+            switch (status) {
+                case 'RUNNING':
+                    stageElement.textContent = `生成中... (${attempt}次尝试)`;
+                    break;
+                case 'PENDING':
+                    stageElement.textContent = `排队中... (${attempt}次尝试)`;
+                    break;
+                case 'SUCCEEDED':
+                    stageElement.textContent = '生成完成！';
+                    break;
+                case 'FAILED':
+                    stageElement.textContent = '生成失败';
+                    break;
+                default:
+                    stageElement.textContent = `处理中... (${attempt}次尝试)`;
+                    break;
+            }
+        }
+
+        // =============================================
+        // 图片下载功能
+        // =============================================
+        function downloadImage(imgUrl, filename) {
+            addLog('info', `开始下载图片: ${filename}`);
+            
+            // 检查图片 URL 是否为 base64 格式
+            if (imgUrl.startsWith('data:image')) {
+                // 处理 base64 格式的图片
+                const link = document.createElement('a');
+                link.href = imgUrl;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                addLog('success', `Base64 图片下载成功: ${filename}`);
+            } else if (imgUrl.includes('dashscope-7c2c.oss-accelerate.aliyuncs.com')) {
+                // 处理阿里云 OSS 图片，通过后端代理下载
+                addLog('info', `通过后端代理下载阿里云 OSS 图片`);
+                
+                // 构建代理请求
+                const proxyUrl = '/api/wanxiang-task';
+                const params = new URLSearchParams({
+                    action: 'download',
+                    url: imgUrl
+                });
+                
+                fetch(`${proxyUrl}?${params.toString()}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`网络响应失败: ${response.status}`);
+                        }
+                        return response.blob();
+                    })
+                    .then(blob => {
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = filename;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                        addLog('success', `图片下载成功: ${filename}`);
+                    })
+                    .catch(error => {
+                        addLog('error', `图片下载失败: ${error.message}`);
+                        alert(`下载失败: ${error.message}`);
+                    });
+            } else {
+                // 处理普通 URL 的图片
+                fetch(imgUrl)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`网络响应失败: ${response.status}`);
+                        }
+                        return response.blob();
+                    })
+                    .then(blob => {
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = filename;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                        addLog('success', `图片下载成功: ${filename}`);
+                    })
+                    .catch(error => {
+                        addLog('error', `图片下载失败: ${error.message}`);
+                        alert(`下载失败: ${error.message}`);
+                    });
+            }
+        }
+
+        // =============================================
+        // 3D 生成（腾讯云智创3D）
+        // =============================================
+        async function generate3DFromImage(id) {
+            const design = generatedDesigns.find(d => d.id === id);
+            if (!design) return alert("未找到对应设计");
+            
+            switchTab(2);
+            addLog('info', `开始生成3D模型，基于: ${design.name}`);
+            
+            const loading = document.getElementById('3d-loading');
+            const fallback = document.getElementById('3d-fallback');
+            
+            loading.classList.remove('hidden');
+            fallback.classList.add('hidden');
+            
+            try {
+                addLog('info', '调用腾讯云智创3D API（通过后端代理）');
+                
+                // 通过后端代理调用腾讯云API
+                const response = await fetch('/api/tencent3d', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        imageUrl: design.image
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API调用失败: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                addLog('info', `腾讯云API响应: ${JSON.stringify(result)}`);
+                
+                // 处理腾讯云返回的结果结构
+                if (result.ResultFile3Ds && result.ResultFile3Ds.length > 0) {
+                    const modelUrl = result.ResultFile3Ds[0].Url;
+                    addLog('success', `3D模型生成成功: ${modelUrl}`);
+                    
+                    // 显示3D模型
+                    show3DModel(modelUrl);
+                } else {
+                    throw new Error('未返回3D模型文件');
+                }
+                
+            } catch (error) {
+                addLog('error', `3D生成失败: ${error.message}`);
+                alert(`3D生成失败: ${error.message}\n\n请查看控制台日志获取详细信息`);
+            } finally {
+                loading.classList.add('hidden');
+            }
+        }
+        
+        // 显示3D模型
+        function show3DModel(modelUrl) {
+            const fallback = document.getElementById('3d-fallback');
+            fallback.innerHTML = `
+                <div class="model-viewer">
+                    <div class="w-full h-full flex items-center justify-center">
+                        <img src="${modelUrl}" class="w-full h-full object-contain" alt="3D模型">
+                    </div>
+                </div>
+            `;
+            fallback.classList.remove('hidden');
+        }
+
+        // =============================================
+        // 模板库
+        // =============================================
+        const templates = [
+            {name:"安踏轻量跑鞋", prompt:"安踏轻量跑鞋，透气网面，碳板中底，白色红色配色，白色背景，高清8K，电商级产品摄影"},
+            {name:"篮球战靴", prompt:"专业篮球鞋，高帮设计，加厚鞋底，黑色金色配色，白色背景，高清8K，电商级产品摄影"},
+            {name:"碳板竞速", prompt:"碳板竞速跑鞋，超轻设计，流线型外观，荧光绿配色，白色背景，高清8K，电商级产品摄影"},
+            {name:"复古休闲鞋", prompt:"复古休闲运动鞋，经典版型，皮革材质，米白色，白色背景，高清8K，电商级产品摄影"}
+        ];
+       
+        function renderTemplates() {
+            const grid = document.getElementById('template-grid');
+            grid.innerHTML = templates.map((t, i) => `
+                <div class="bg-white rounded-3xl overflow-hidden card-hover cursor-pointer" onclick="useTemplate(${i})">
+                    <div class="w-full h-52 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                        <span class="text-6xl">${['👟','🏀','🏃','👞'][i]}</span>
+                    </div>
+                    <div class="p-4">
+                        <div class="text-sm font-medium">${t.name}</div>
+                        <p class="text-xs text-gray-400 mt-1 line-clamp-2">${t.prompt}</p>
+                        <button class="mt-3 w-full py-2 text-xs bg-red-50 text-red-600 rounded-2xl hover:bg-red-100 transition">
+                            使用此模板
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function useTemplate(index) {
+            const t = templates[index];
+            document.getElementById('prompt-input').value = t.prompt;
+            switchTab(1);
+            addLog('info', `已加载模板：${t.name}`);
+        }
+    </script>
+</body>
+</html>

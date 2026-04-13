@@ -1,0 +1,16 @@
+{
+  "name": "xm-ai",
+  "version": "1.0.0",
+  "description": "鞋魔AI - 基于通义万相的鞋款设计工具",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel deploy"
+  },
+  "dependencies": {
+    "@vercel/blob": "^0.20.0"
+  },
+  "devDependencies": {
+    "vercel": "^36.0.0"
+  }
+}
