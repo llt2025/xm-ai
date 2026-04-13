@@ -18,45 +18,48 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: '缺少imageUrl参数' });
   }
 
-  // 腾讯云智创3D API配置
+  // 腾讯云智创3D API配置（2026年最新）
   const config = {
-    endpoint: 'api.cloud.tencent.com',
+    endpoint: 'ai3d.tencentcloudapi.com',
     region: 'ap-guangzhou',
-    action: 'Create3DModel',
-    version: '2024-01-01',
-    service: 'ai'
+    action: 'SubmitHunyuanT3DProJob', // 专业版
+    // action: 'SubmitHunyuanT3DRapidJob', // 快速版
+    version: '2025-05-13',
+    service: 'ai3d'
   };
 
   try {
-    // 构建请求参数
-    const params = {
-      SecretId: secretId,
-      Action: config.action,
-      Version: config.version,
-      Region: config.region,
-      ImageUrl: imageUrl,
-      Timestamp: Math.floor(Date.now() / 1000),
-      Nonce: Math.floor(Math.random() * 1000000000)
+    // 构建请求体
+    const requestBody = {
+      ImageUrl: imageUrl
     };
 
     // 生成签名
-    const signature = generateSignature(params, secretKey, config);
-    params.Signature = signature;
+    const timestamp = Math.floor(Date.now() / 1000);
+    const nonce = Math.floor(Math.random() * 1000000000);
+    const signature = generateSignature(secretId, secretKey, config, timestamp, nonce, requestBody);
 
-    // 构建请求URL
-    const queryString = Object.entries(params)
-      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-      .join('&');
+    // 构建请求头
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-TC-Action': config.action,
+      'X-TC-Region': config.region,
+      'X-TC-Version': config.version,
+      'X-TC-Timestamp': timestamp.toString(),
+      'X-TC-Nonce': nonce.toString(),
+      'Authorization': signature
+    };
 
-    const url = `https://${config.endpoint}/?${queryString}`;
+    const url = `https://${config.endpoint}`;
     console.log('腾讯云API请求URL:', url);
+    console.log('请求头:', headers);
+    console.log('请求体:', requestBody);
 
     // 发送请求
     const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(requestBody)
     });
 
     console.log('响应状态:', response.status);
@@ -77,25 +80,33 @@ export default async function handler(req, res) {
   }
 }
 
-// 生成腾讯云API 3.0签名
-function generateSignature(params, secretKey, config) {
-  // 1. 对参数按字典序排序
-  const sortedParams = Object.keys(params).sort().reduce((obj, key) => {
-    obj[key] = params[key];
-    return obj;
-  }, {});
-
-  // 2. 构建签名字符串
-  const signStr = `GET${config.endpoint}/?` + Object.entries(sortedParams)
-    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-    .join('&');
-
-  console.log('签名字符串:', signStr);
-
-  // 3. 使用HMAC-SHA1算法计算签名
-  const hmac = crypto.createHmac('sha1', secretKey);
-  hmac.update(signStr);
-  const signature = hmac.digest('base64');
-
-  return signature;
+// 生成腾讯云API 3.0签名（TC3-HMAC-SHA256）
+function generateSignature(secretId, secretKey, config, timestamp, nonce, requestBody) {
+  // 1. 构建规范请求串
+  const httpRequestMethod = 'POST';
+  const canonicalUri = '/';
+  const canonicalQueryString = '';
+  const canonicalHeaders = `content-type:application/json\nhost:${config.endpoint}\n`;
+  const signedHeaders = 'content-type;host';
+  const payload = JSON.stringify(requestBody);
+  const hashedPayload = crypto.createHash('sha256').update(payload).digest('hex');
+  
+  const canonicalRequest = `${httpRequestMethod}\n${canonicalUri}\n${canonicalQueryString}\n${canonicalHeaders}\n${signedHeaders}\n${hashedPayload}`;
+  
+  // 2. 构建签名串
+  const date = new Date(timestamp * 1000).toISOString().split('T')[0];
+  const credentialScope = `${date}/${config.service}/tc3_request`;
+  const hashedCanonicalRequest = crypto.createHash('sha256').update(canonicalRequest).digest('hex');
+  const stringToSign = `TC3-HMAC-SHA256\n${timestamp}\n${credentialScope}\n${hashedCanonicalRequest}`;
+  
+  // 3. 计算签名
+  const kDate = crypto.createHmac('sha256', `TC3${secretKey}`).update(date).digest();
+  const kService = crypto.createHmac('sha256', kDate).update(config.service).digest();
+  const kSigning = crypto.createHmac('sha256', kService).update('tc3_request').digest();
+  const signature = crypto.createHmac('sha256', kSigning).update(stringToSign).digest('hex');
+  
+  // 4. 构建Authorization头
+  const authorization = `TC3-HMAC-SHA256 Credential=${secretId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+  
+  return authorization;
 }
