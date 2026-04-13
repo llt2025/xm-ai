@@ -1,3 +1,5 @@
+import crypto from 'crypto';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: '只支持 POST' });
 
@@ -38,7 +40,7 @@ export default async function handler(req, res) {
     };
 
     // 生成签名
-    const signature = await generateSignature(params, secretKey, config);
+    const signature = generateSignature(params, secretKey, config);
     params.Signature = signature;
 
     // 构建请求URL
@@ -76,7 +78,7 @@ export default async function handler(req, res) {
 }
 
 // 生成腾讯云API 3.0签名
-async function generateSignature(params, secretKey, config) {
+function generateSignature(params, secretKey, config) {
   // 1. 对参数按字典序排序
   const sortedParams = Object.keys(params).sort().reduce((obj, key) => {
     obj[key] = params[key];
@@ -91,8 +93,7 @@ async function generateSignature(params, secretKey, config) {
   console.log('签名字符串:', signStr);
 
   // 3. 使用HMAC-SHA1算法计算签名
-  const crypto = await import('crypto');
-  const hmac = crypto.default.createHmac('sha1', secretKey);
+  const hmac = crypto.createHmac('sha1', secretKey);
   hmac.update(signStr);
   const signature = hmac.digest('base64');
 
