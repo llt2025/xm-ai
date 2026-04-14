@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import fetch from 'node-fetch';
 
 export default async function handler(req, res) {
   console.log('=== 腾讯云智创3D API 调用开始 ===');

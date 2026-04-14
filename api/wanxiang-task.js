@@ -1,4 +1,4 @@
-import { put } from '@vercel/blob';
+import fetch from 'node-fetch';
 
 export default async function handler(req, res) {
   // 1. 基础校验保持不变
@@ -70,38 +70,10 @@ export default async function handler(req, res) {
                 const originalImageUrl = item.message.content[0].image;
                 console.log('✅ 找到wan2.7-image图片URL:', originalImageUrl);
                 
-                try {
-                    // 下载图片并转存到Vercel Blob（彻底解决跨域）
-                    const imageResponse = await fetch(originalImageUrl, {
-                        headers: {
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-                        },
-                        timeout: 30000
-                    });
-                    
-                    if (!imageResponse.ok) {
-                        throw new Error(`图片下载失败: ${imageResponse.status}`);
-                    }
-                    
-                    const buffer = await imageResponse.arrayBuffer();
-                    const fileName = `shoes-design-${Date.now()}-${index + 1}.png`;
-                    
-                    // 上传到Vercel Blob Storage
-                    const blob = await put(fileName, buffer, {
-                        access: 'public',
-                        contentType: 'image/png',
-                        addRandomSuffix: true
-                    });
-                    
-                    imageUrl = blob.url;
-                    imageType = 'blob';
-                    console.log('✅ 图片转存成功:', imageUrl);
-                } catch (error) {
-                    console.error('❌ 图片转存失败，使用代理:', error);
-                    // 转存失败时自动降级为后端代理
-                    imageUrl = `/api/wanxiang-task?action=proxy&url=${encodeURIComponent(originalImageUrl)}`;
-                    imageType = 'proxy';
-                }
+                // 使用后端代理方式处理图片，解决跨域问题
+                imageUrl = `/api/wanxiang-task?action=proxy&url=${encodeURIComponent(originalImageUrl)}`;
+                imageType = 'proxy';
+                console.log('✅ 图片代理链接:', imageUrl);
             }
             
             if (imageUrl) {
