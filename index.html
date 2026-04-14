@@ -678,6 +678,10 @@
                                 <span>✏️</span>
                                 <span>修改重生成</span>
                             </button>
+                            <button class="local-modify-btn flex-1 py-4 text-base bg-green-500 text-white rounded-2xl hover:bg-green-600 transition flex items-center justify-center gap-2">
+                                <span>🎯</span>
+                                <span>局部修改</span>
+                            </button>
                             <button class="generate3d-btn flex-1 py-4 text-base bg-blue-500 text-white rounded-2xl hover:bg-blue-600 transition flex items-center justify-center gap-2">
                                 <span>🎯</span>
                                 <span>生成3D</span>
@@ -707,6 +711,46 @@
                     // 聚焦到输入框
                     document.getElementById('prompt-input').focus();
                     addLog('info', `已加载设计 ${design.name} 的prompt到输入框，可修改后重新生成`);
+                    e.stopPropagation();
+                });
+                
+                const localModifyBtn = cardContent.querySelector('.local-modify-btn');
+                localModifyBtn.addEventListener('click', (e) => {
+                    // 弹出局部修改对话框
+                    const modifyPart = prompt('请选择要修改的部分：\n1. 鞋面\n2. 鞋底\n3. 颜色\n4. 细节\n\n请输入数字选择（例如：1）：');
+                    
+                    if (modifyPart) {
+                        let partName = '';
+                        switch (modifyPart) {
+                            case '1':
+                                partName = '鞋面';
+                                break;
+                            case '2':
+                                partName = '鞋底';
+                                break;
+                            case '3':
+                                partName = '颜色';
+                                break;
+                            case '4':
+                                partName = '细节';
+                                break;
+                            default:
+                                alert('无效的选择');
+                                return;
+                        }
+                        
+                        const modification = prompt(`请描述对${partName}的修改要求：`);
+                        if (modification) {
+                            // 生成新的prompt，约束其他部分保持不变
+                            const newPrompt = `${design.prompt}，只修改${partName}：${modification}，其他部分保持不变`;
+                            document.getElementById('prompt-input').value = newPrompt;
+                            // 滚动到输入区域
+                            document.getElementById('prompt-input').scrollIntoView({ behavior: 'smooth' });
+                            // 聚焦到输入框
+                            document.getElementById('prompt-input').focus();
+                            addLog('info', `已为设计 ${design.name} 生成局部修改prompt，只修改${partName}`);
+                        }
+                    }
                     e.stopPropagation();
                 });
                 
