@@ -231,8 +231,16 @@
                         <p class="text-xs text-gray-400 mt-1">任务ID：<span id="tencent-task-id">生成中...</span></p>
                     </div>
                    
-                    <div id="3d-fallback" class="w-full bg-gray-100 rounded-2xl flex items-center justify-center text-gray-500" style="height:520px">
-                        请先在「图片驱动魔盒」生成效果图，然后点击"生成360°3D"
+                    <div id="3d-fallback" class="w-full bg-gray-100 rounded-2xl flex flex-col items-center justify-center text-gray-500" style="height:520px">
+                        <div class="text-center">
+                            <p class="mb-4">请先在「图片驱动魔盒」生成效果图，然后点击"生成360°3D"</p>
+                            <p class="mb-6">或</p>
+                            <div class="upload-zone w-64 h-64 border-2 border-dashed border-gray-400 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors" id="3d-upload-zone">
+                                <div class="text-4xl mb-2">📤</div>
+                                <p class="text-sm">直接上传图片生成3D</p>
+                                <input type="file" accept="image/*" class="hidden" id="3d-upload-input">
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -280,6 +288,18 @@
             checkAPIStatus();
             renderTemplates();
             switchTab(0);
+           
+            // 绑定3D上传区域事件
+            const uploadZone = document.getElementById('3d-upload-zone');
+            const uploadInput = document.getElementById('3d-upload-input');
+            
+            if (uploadZone && uploadInput) {
+                uploadZone.addEventListener('click', () => {
+                    uploadInput.click();
+                });
+                
+                uploadInput.addEventListener('change', handle3DUpload);
+            }
            
             addLog('info', '鞋魔AI Vercel 正式版已启动');
             addLog('info', `当前模型：${API_CONFIG.wanxiang.model}`);
@@ -889,6 +909,31 @@
             switchTab(2);
             addLog('info', `开始生成3D模型，基于: ${design.name}`);
             
+            await process3DGeneration(design.image);
+        }
+        
+        // 处理3D图片上传
+        function handle3DUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            addLog('info', `上传文件: ${file.name}`);
+            
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const imageUrl = e.target.result;
+                addLog('info', '文件读取完成，开始生成3D模型');
+                await process3DGeneration(imageUrl);
+            };
+            reader.onerror = function() {
+                addLog('error', '文件读取失败');
+                alert('文件读取失败，请重试');
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // 处理3D生成的通用函数
+        async function process3DGeneration(imageUrl) {
             const loading = document.getElementById('3d-loading');
             const fallback = document.getElementById('3d-fallback');
             
@@ -909,7 +954,7 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        imageUrl: design.image,
+                        imageUrl: imageUrl,
                         version: selectedVersion
                     })
                 });
