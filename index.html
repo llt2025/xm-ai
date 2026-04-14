@@ -674,6 +674,10 @@
                                 <span>📥</span>
                                 <span>下载图片</span>
                             </button>
+                            <button class="modify-btn flex-1 py-4 text-base bg-yellow-500 text-white rounded-2xl hover:bg-yellow-600 transition flex items-center justify-center gap-2">
+                                <span>✏️</span>
+                                <span>修改重生成</span>
+                            </button>
                             <button class="generate3d-btn flex-1 py-4 text-base bg-blue-500 text-white rounded-2xl hover:bg-blue-600 transition flex items-center justify-center gap-2">
                                 <span>🎯</span>
                                 <span>生成3D</span>
@@ -693,6 +697,18 @@
                 // 添加事件监听器
                 const downloadBtn = cardContent.querySelector('.download-btn');
                 downloadBtn.addEventListener('click', () => downloadImage(firstImageUrl, 'design-1.png'));
+                
+                const modifyBtn = cardContent.querySelector('.modify-btn');
+                modifyBtn.addEventListener('click', (e) => {
+                    // 将当前设计的prompt加载到输入框
+                    document.getElementById('prompt-input').value = design.prompt;
+                    // 滚动到输入区域
+                    document.getElementById('prompt-input').scrollIntoView({ behavior: 'smooth' });
+                    // 聚焦到输入框
+                    document.getElementById('prompt-input').focus();
+                    addLog('info', `已加载设计 ${design.name} 的prompt到输入框，可修改后重新生成`);
+                    e.stopPropagation();
+                });
                 
                 const generate3dBtn = cardContent.querySelector('.generate3d-btn');
                 generate3dBtn.addEventListener('click', (e) => {
