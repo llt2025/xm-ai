@@ -40,9 +40,19 @@ export default async function handler(req, res) {
 
   try {
     // 构建请求体
-    const requestBody = {
-      ImageUrl: imageUrl
-    };
+    let requestBody = {};
+    
+    // 检查是否为base64格式的图片
+    if (imageUrl.startsWith('data:image')) {
+      // 提取base64数据（去掉data:image/xxx;base64,前缀）
+      const base64Data = imageUrl.split(',')[1];
+      requestBody.ImageBase64 = base64Data;
+      console.log('使用ImageBase64参数（base64图片）');
+    } else {
+      // 普通URL
+      requestBody.ImageUrl = imageUrl;
+      console.log('使用ImageUrl参数（普通URL）');
+    }
     console.log('构建请求体:', requestBody);
 
     // 生成签名
