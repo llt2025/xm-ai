@@ -20,23 +20,22 @@ export default async function handler(req, res) {
   }
 
   console.log('请求体:', req.body);
-  const { imageUrl } = req.body;
+  const { imageUrl, version = 'rapid' } = req.body; // 默认使用极速版
   if (!imageUrl) {
     console.error('缺少imageUrl参数');
     return res.status(400).json({ error: '缺少imageUrl参数' });
   }
   console.log('图片URL:', imageUrl);
+  console.log('API版本:', version);
 
   // 腾讯云智创3D API配置（2026年最新）
   const config = {
     endpoint: 'ai3d.tencentcloudapi.com',
     region: 'ap-guangzhou',
-    action: 'SubmitHunyuanTo3DProJob', // 专业版
-    // action: 'SubmitHunyuanTo3DRapidJob', // 快速版
+    action: version === 'pro' ? 'SubmitHunyuanTo3DProJob' : 'SubmitHunyuanTo3DRapidJob',
     version: '2025-05-13',
     service: 'ai3d'
   };
-  
   console.log('API配置:', config);
 
   try {

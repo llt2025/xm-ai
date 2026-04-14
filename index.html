@@ -211,6 +211,19 @@
                 <div id="content-2" class="hidden max-w-4xl mx-auto">
                     <h2 class="text-3xl font-semibold mb-6">🌀 360°简易3D展示 <span class="text-sm text-blue-600">(腾讯云智创3D 图像转3D)</span></h2>
                     <p id="3d-info" class="text-gray-500 mb-6">选中效果图后点击"生成3D"即可调用腾讯云智创3D</p>
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">腾讯云3D API版本</label>
+                        <div class="flex gap-4">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="tencent3d-version" value="rapid" checked class="w-4 h-4 text-red-500">
+                                <span class="text-sm">极速版 (15积分/次)</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="tencent3d-version" value="pro" class="w-4 h-4 text-red-500">
+                                <span class="text-sm">专业版 (20积分/次)</span>
+                            </label>
+                        </div>
+                    </div>
                    
                     <div id="3d-loading" class="hidden flex flex-col items-center py-12">
                         <div class="animate-spin w-10 h-10 border-4 border-blue-200 border-t-blue-500 rounded-full mb-4"></div>
@@ -885,6 +898,10 @@
             try {
                 addLog('info', '调用腾讯云智创3D API（通过后端代理）');
                 
+                // 获取用户选择的API版本
+                const selectedVersion = document.querySelector('input[name="tencent3d-version"]:checked').value;
+                addLog('info', `使用腾讯云3D API版本: ${selectedVersion === 'pro' ? '专业版' : '极速版'}`);
+                
                 // 通过后端代理调用腾讯云API
                 const response = await fetch('/api/tencent3d', {
                     method: 'POST',
@@ -892,7 +909,8 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        imageUrl: design.image
+                        imageUrl: design.image,
+                        version: selectedVersion
                     })
                 });
                 
