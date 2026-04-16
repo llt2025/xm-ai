@@ -1,6 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -8,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 // 配置CORS
 app.use(cors({
@@ -38,15 +37,15 @@ app.post('/api/tencent3d', tencent3dHandler);
 // API网关路由
 app.use('/api/gateway', gatewayRouter);
 
-// 提供静态文件服务
-app.use(express.static(__dirname));
+// 提供静态文件服务（用于生产环境）
+app.use(express.static(path.join(__dirname, 'dist')));
 
 // 处理所有其他路由，返回index.html（用于单页应用）
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 // 启动服务器
 app.listen(PORT, () => {
-  console.log(`服务器运行在 http://localhost:${PORT}`);
+  console.log(`API服务器运行在 http://localhost:${PORT}`);
 });
