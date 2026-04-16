@@ -1,6 +1,6 @@
-import fetch from 'node-fetch';
+const fetch = require('node-fetch');
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: '只支持 POST' });
 
   const apiKey = process.env.DASHSCOPE_API_KEY;
@@ -34,3 +34,7 @@ export default async function handler(req, res) {
     res.status(500).json({ error: '代理请求失败', details: error.message });
   }
 }
+
+module.exports = {
+  default: handler
+};

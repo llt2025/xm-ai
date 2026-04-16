@@ -1,0 +1,41 @@
+{
+  "envId": "your-cloudbase-env-id",
+  "functions": {
+    "api-proxy": {
+      "timeout": 60,
+      "memory": 256,
+      "runtime": "Nodejs16.0",
+      "handler": "functions/api-proxy/index.main"
+    },
+    "api-wanxiang": {
+      "timeout": 60,
+      "memory": 256,
+      "runtime": "Nodejs16.0",
+      "handler": "functions/api-wanxiang/index.main"
+    },
+    "api-wanxiang-task": {
+      "timeout": 60,
+      "memory": 256,
+      "runtime": "Nodejs16.0",
+      "handler": "functions/api-wanxiang-task/index.main"
+    },
+    "api-tencent3d": {
+      "timeout": 60,
+      "memory": 256,
+      "runtime": "Nodejs16.0",
+      "handler": "functions/api-tencent3d/index.main"
+    },
+    "api-gateway": {
+      "timeout": 60,
+      "memory": 256,
+      "runtime": "Nodejs16.0",
+      "handler": "functions/api-gateway/index.main"
+    },
+    "static-server": {
+      "timeout": 60,
+      "memory": 256,
+      "runtime": "Nodejs16.0",
+      "handler": "functions/static-server/index.main"
+    }
+  }
+}

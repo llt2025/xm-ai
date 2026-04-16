@@ -44,6 +44,10 @@ class LocalCache {
 }
 
 // 创建缓存实例
-export function createCache() {
+function createCache() {
   return new LocalCache();
 }
+
+module.exports = {
+  createCache
+};

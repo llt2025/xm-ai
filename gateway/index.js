@@ -1,9 +1,9 @@
-import express from 'express';
-import { createLogger } from './logger.js';
-import { createCache } from './cache.js';
-import { createProxy } from './proxy.js';
-import wanxiangService from './services/wanxiang.js';
-import tencent3dService from './services/tencent3d.js';
+const express = require('express');
+const { createLogger } = require('./logger.js');
+const { createCache } = require('./cache.js');
+const { createProxy } = require('./proxy.js');
+const wanxiangService = require('./services/wanxiang.js').default;
+const tencent3dService = require('./services/tencent3d.js').default;
 
 const router = express.Router();
 const logger = createLogger();
@@ -101,4 +101,6 @@ router.post('/proxy', async (req, res) => {
   }
 });
 
-export default router;
+module.exports = {
+  default: router
+};

@@ -1,4 +1,4 @@
-import fetch from 'node-fetch';
+const fetch = require('node-fetch');
 
 class WanxiangService {
   constructor() {
@@ -83,4 +83,6 @@ class WanxiangService {
   }
 }
 
-export default new WanxiangService();
+module.exports = {
+  default: new WanxiangService()
+};

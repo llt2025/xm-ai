@@ -7,14 +7,20 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "cloudbase deploy",
+    "deploy:functions": "cloudbase deploy functions",
+    "deploy:static": "cloudbase deploy static"
   },
   "dependencies": {
     "express": "^4.18.2",
     "cors": "^2.8.5",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "@cloudbase/node-sdk": "^2.11.0",
+    "@cloudbase/functions-framework": "^1.0.0"
   },
   "devDependencies": {
-    "vite": "^5.0.0"
+    "vite": "^5.0.0",
+    "@cloudbase/cli": "^1.0.0"
   }
 }

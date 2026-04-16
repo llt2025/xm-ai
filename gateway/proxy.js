@@ -1,4 +1,4 @@
-import fetch from 'node-fetch';
+const fetch = require('node-fetch');
 
 // 本地调试代理实现
 class Proxy {
@@ -44,6 +44,10 @@ class Proxy {
 }
 
 // 创建代理实例
-export function createProxy() {
+function createProxy() {
   return new Proxy();
 }
+
+module.exports = {
+  createProxy
+};

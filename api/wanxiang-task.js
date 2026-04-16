@@ -1,6 +1,6 @@
-import fetch from 'node-fetch';
+const fetch = require('node-fetch');
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   // 1. 基础校验保持不变
   if (req.method !== 'GET' && req.method !== 'POST') {
     return res.status(405).json({ error: "Method Not Allowed" });
@@ -209,3 +209,7 @@ async function handleImageProxy(req, res) {
     });
   }
 }
+
+module.exports = {
+  default: handler
+};

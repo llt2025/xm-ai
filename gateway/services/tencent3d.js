@@ -1,5 +1,5 @@
-import fetch from 'node-fetch';
-import crypto from 'crypto';
+const fetch = require('node-fetch');
+const crypto = require('crypto');
 
 class Tencent3dService {
   constructor() {
@@ -105,4 +105,6 @@ class Tencent3dService {
   }
 }
 
-export default new Tencent3dService();
+module.exports = {
+  default: new Tencent3dService()
+};

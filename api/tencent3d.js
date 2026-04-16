@@ -1,7 +1,7 @@
-import crypto from 'crypto';
-import fetch from 'node-fetch';
+const crypto = require('crypto');
+const fetch = require('node-fetch');
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   console.log('=== 腾讯云智创3D API 调用开始 ===');
   
   if (req.method !== 'POST') {
@@ -204,3 +204,7 @@ function generateSignature(secretId, secretKey, config, timestamp, nonce, reques
     throw error;
   }
 }
+
+module.exports = {
+  default: handler
+};

@@ -1,7 +1,7 @@
-// api/proxy.js —— Express 格式
-import fetch from 'node-fetch';
+// api/proxy.js —— CommonJS 格式
+const fetch = require('node-fetch');
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).send('Method Not Allowed');
   }
@@ -35,3 +35,7 @@ export default async function handler(req, res) {
     res.status(500).json({ error: '代理请求失败', details: error.message });
   }
 }
+
+module.exports = {
+  default: handler
+};

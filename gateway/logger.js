@@ -1,5 +1,5 @@
 // 创建日志记录器
-export function createLogger() {
+function createLogger() {
   return {
     info: async (message, data = {}) => {
       console.log('INFO:', message, data);
@@ -9,3 +9,7 @@ export function createLogger() {
     }
   };
 }
+
+module.exports = {
+  createLogger
+};
