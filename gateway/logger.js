@@ -1,4 +1,4 @@
-import * as sls from '@alicloud/sls-sdk';
+import * as sls from '@alicloud/sls';
 
 let slsClient = null;
 
